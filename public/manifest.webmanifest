@@ -1,6 +1,6 @@
 {
-  "name": "My Fitness",
-  "short_name": "My Fitness",
+  "name": "gymbro",
+  "short_name": "gymbro",
   "description": "Diario de comidas con escáner de código de barras y registro de peso",
   "lang": "es",
   "start_url": "/",

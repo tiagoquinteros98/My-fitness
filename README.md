@@ -1,6 +1,6 @@
-# My Fitness
+# gymbro
 
-Clon simple de MyFitnessPal con tres secciones:
+App personal estilo MyFitnessPal con tres secciones:
 
 - **Diario de comidas**: agregá alimentos a Desayuno, Almuerzo, Cena o Snacks, buscándolos por nombre o **escaneando el código de barras** con la cámara. Muestra calorías y macros (carbohidratos, grasas, proteínas) y las calorías restantes contra un objetivo diario.
 - **Registro de peso**: un peso por día, gráfico de evolución, historial, cambio total y peso objetivo.

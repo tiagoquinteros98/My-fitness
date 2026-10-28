@@ -2,7 +2,7 @@
 // The app page is served from cache right away and refreshed in the background, so opening the
 // installed app never waits on the network (a new version shows up on the next open).
 // Hashed build assets: cache first. The API is never cached (the app keeps its own data copy).
-const CACHE = 'my-fitness-v2'
+const CACHE = 'gymbro-v3'
 
 self.addEventListener('install', () => self.skipWaiting())
 

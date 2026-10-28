@@ -9,7 +9,7 @@ import { foodHistoryReport, progressReport, rangeOf, weightHistoryReport } from 
 
 const TIME_ZONE = 'America/Argentina/Buenos_Aires'
 
-const INSTRUCTIONS = `My Fitness es el diario de comidas y peso del usuario (estilo MyFitnessPal).
+const INSTRUCTIONS = `gymbro es la app de comidas, peso y gimnasio del usuario (estilo MyFitnessPal).
 
 Cómo cargar comida:
 - Foto de una tabla nutricional: leé los valores y convertilos a valores por 100 g (si la tabla es por porción, dividí por los gramos de la porción y multiplicá por 100). Guardá también el tamaño de porción. Si en la foto se ve el código de barras, pasalo en "barcode" para que la próxima vez el escáner de la app lo encuentre.
@@ -153,7 +153,7 @@ async function resolveFood(state: AppState, a: FoodArgs): Promise<Food | string>
 }
 
 export function createMcpServer(): McpServer {
-  const server = new McpServer({ name: 'my-fitness', version: '1.0.0' }, { instructions: INSTRUCTIONS })
+  const server = new McpServer({ name: 'gymbro', version: '1.0.0' }, { instructions: INSTRUCTIONS })
 
   server.registerTool(
     'search_my_foods',

@@ -78,7 +78,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="app-header">my fitness</header>
+      <header className="app-header">gymbro</header>
       <main>{content}</main>
       {screen.name === 'tab' && (
         <nav className="tabbar">
