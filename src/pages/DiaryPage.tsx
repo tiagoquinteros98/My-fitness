@@ -1,5 +1,6 @@
 import { actions, nutrientsFor, useStore } from '../lib/store'
 import { addDays, dayLabel } from '../lib/dates'
+import BarcodeIcon from '../components/BarcodeIcon'
 import GoalsCard from '../components/GoalsCard'
 import { MACROS, MEALS, type DiaryEntry, type Meal } from '../types'
 
@@ -7,10 +8,11 @@ interface Props {
   date: string
   onChangeDate: (date: string) => void
   onAddFood: (meal: Meal) => void
+  onScanFood: (meal: Meal) => void
   onEditEntry: (entry: DiaryEntry) => void
 }
 
-export default function DiaryPage({ date, onChangeDate, onAddFood, onEditEntry }: Props) {
+export default function DiaryPage({ date, onChangeDate, onAddFood, onScanFood, onEditEntry }: Props) {
   const { diary, settings } = useStore()
   const entries = diary.filter((e) => e.date === date)
 
@@ -90,7 +92,14 @@ export default function DiaryPage({ date, onChangeDate, onAddFood, onEditEntry }
           <section key={meal.id} className="card meal">
             <div className="meal-header">
               <h3>{meal.label}</h3>
-              <span>{Math.round(mealKcal)}</span>
+              <span className="meal-kcal">{Math.round(mealKcal)}</span>
+              <button
+                className="scan-shortcut"
+                onClick={() => onScanFood(meal.id)}
+                aria-label={`Escanear código de barras para ${meal.label}`}
+              >
+                <BarcodeIcon size={18} />
+              </button>
             </div>
             {mealEntries.map((e) => (
               <div key={e.id} className="entry">

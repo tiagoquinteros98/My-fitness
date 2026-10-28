@@ -342,16 +342,31 @@ select:focus {
 }
 .meal-header {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 12px;
   border-bottom: 1px solid var(--border);
   padding-bottom: 8px;
 }
 .meal-header h3 {
   margin: 0;
+  flex: 1;
 }
-.meal-header span {
+.meal-kcal {
   font-weight: 600;
+}
+.scan-shortcut {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--mine-bg);
+  color: var(--blue);
+  cursor: pointer;
+}
+.scan-shortcut:active {
+  background: var(--mine-border);
 }
 
 .entry,

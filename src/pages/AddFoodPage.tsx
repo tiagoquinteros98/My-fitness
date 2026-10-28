@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { lookupBarcode, searchFoods } from '../lib/openFoodFacts'
 import { findByBarcode, myFoods, recentFoods, searchMyFoods, useStore, type MyFood } from '../lib/store'
+import BarcodeIcon from '../components/BarcodeIcon'
 import { MEALS, type Food, type Meal } from '../types'
 
 // The scanner pulls in the ZXing decoder, so load it only when the camera is opened.
@@ -17,19 +18,21 @@ const BarcodeScanner = lazy(() =>
 
 interface Props {
   meal: Meal
+  /** Open straight into the camera (the scan shortcut on each meal). */
+  startScanning?: boolean
   onBack: () => void
   onSelectFood: (food: Food) => void
   onCreateFood: (barcode?: string) => void
 }
 
-export default function AddFoodPage({ meal, onBack, onSelectFood, onCreateFood }: Props) {
+export default function AddFoodPage({ meal, startScanning = false, onBack, onSelectFood, onCreateFood }: Props) {
   const store = useStore()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Food[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [lookingUp, setLookingUp] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [scanning, setScanning] = useState(false)
+  const [scanning, setScanning] = useState(startScanning)
   const [notFoundCode, setNotFoundCode] = useState<string | null>(null)
 
   const recents = recentFoods(store)
@@ -81,7 +84,7 @@ export default function AddFoodPage({ meal, onBack, onSelectFood, onCreateFood }
   if (scanning) {
     return (
       <Suspense fallback={<p className="muted center">Abriendo cámara…</p>}>
-        <BarcodeScanner onDetected={handleBarcode} onClose={() => setScanning(false)} />
+        <BarcodeScanner onDetected={handleBarcode} onClose={() => (startScanning ? onBack() : setScanning(false))} />
       </Suspense>
     )
   }
@@ -239,14 +242,6 @@ function GlobeIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
       <circle cx="12" cy="12" r="9" />
       <path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z" />
-    </svg>
-  )
-}
-
-function BarcodeIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M2 4h2v16H2zM6 4h1v16H6zM9 4h2v16H9zM13 4h1v16h-1zM16 4h2v16h-2zM20 4h1v16h-1zM22 4h0v16z" />
     </svg>
   )
 }

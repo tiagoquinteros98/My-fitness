@@ -11,7 +11,7 @@ type Tab = 'diary' | 'weight'
 
 type Screen =
   | { name: 'tab' }
-  | { name: 'addFood'; meal: Meal }
+  | { name: 'addFood'; meal: Meal; scan?: boolean }
   | { name: 'createFood'; meal: Meal; barcode?: string }
   | { name: 'foodDetail'; meal: Meal; food: Food; entry?: DiaryEntry; from: 'addFood' | 'tab' }
 
@@ -26,7 +26,9 @@ export default function App() {
     case 'addFood':
       content = (
         <AddFoodPage
+          key={screen.scan ? 'scan' : 'search'}
           meal={screen.meal}
+          startScanning={screen.scan}
           onBack={home}
           onSelectFood={(food) => setScreen({ name: 'foodDetail', meal: screen.meal, food, from: 'addFood' })}
           onCreateFood={(barcode) => setScreen({ name: 'createFood', meal: screen.meal, barcode })}
@@ -61,6 +63,7 @@ export default function App() {
             date={date}
             onChangeDate={setDate}
             onAddFood={(meal) => setScreen({ name: 'addFood', meal })}
+            onScanFood={(meal) => setScreen({ name: 'addFood', meal, scan: true })}
             onEditEntry={(entry) =>
               setScreen({ name: 'foodDetail', meal: entry.meal, food: entry.food, entry, from: 'tab' })
             }
