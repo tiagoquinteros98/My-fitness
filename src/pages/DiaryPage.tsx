@@ -1,6 +1,7 @@
 import { actions, nutrientsFor, useStore } from '../lib/store'
 import { addDays, dayLabel } from '../lib/dates'
-import { MEALS, type DiaryEntry, type Meal } from '../types'
+import GoalsCard from '../components/GoalsCard'
+import { MACROS, MEALS, type DiaryEntry, type Meal } from '../types'
 
 interface Props {
   date: string
@@ -60,9 +61,25 @@ export default function DiaryPage({ date, onChangeDate, onAddFood, onEditEntry }
           <div style={{ width: `${Math.min(100, (totals.kcal / settings.calorieGoal) * 100)}%` }} />
         </div>
         <div className="macros">
-          <span>Carbs {Math.round(totals.carbs)} g</span>
-          <span>Grasas {Math.round(totals.fat)} g</span>
-          <span>Proteínas {Math.round(totals.protein)} g</span>
+          {MACROS.map((m) => {
+            const eaten = Math.round(totals[m.id])
+            const goal = settings.macroGoals[m.id]
+            return (
+              <div key={m.id} className={`macro macro-${m.id}`}>
+                <span>{m.label}</span>
+                <strong className={goal && eaten > goal ? 'over' : undefined}>
+                  {eaten}
+                  {goal ? <small> / {goal} g</small> : <small> g</small>}
+                </strong>
+                {goal ? (
+                  <div className="progress thin">
+                    <div style={{ width: `${Math.min(100, (eaten / goal) * 100)}%` }} />
+                  </div>
+                ) : null}
+                {goal ? <small>{eaten > goal ? `+${eaten - goal} g` : `Faltan ${goal - eaten} g`}</small> : null}
+              </div>
+            )
+          })}
         </div>
       </section>
 
@@ -97,22 +114,7 @@ export default function DiaryPage({ date, onChangeDate, onAddFood, onEditEntry }
         )
       })}
 
-      <section className="card goal">
-        <label>
-          Objetivo diario de calorías
-          <input
-            type="number"
-            inputMode="numeric"
-            min={500}
-            step={50}
-            value={settings.calorieGoal}
-            onChange={(e) => {
-              const v = parseInt(e.target.value, 10)
-              if (v > 0) actions.updateSettings({ calorieGoal: v })
-            }}
-          />
-        </label>
-      </section>
+      <GoalsCard />
     </div>
   )
 }

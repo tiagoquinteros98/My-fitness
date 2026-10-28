@@ -40,7 +40,17 @@ export interface WeightEntry {
   kg: number
 }
 
+export type Macro = 'carbs' | 'fat' | 'protein'
+
+export const MACROS: { id: Macro; label: string; kcalPerGram: number }[] = [
+  { id: 'carbs', label: 'Carbs', kcalPerGram: 4 },
+  { id: 'fat', label: 'Grasas', kcalPerGram: 9 },
+  { id: 'protein', label: 'Proteínas', kcalPerGram: 4 },
+]
+
 export interface Settings {
   calorieGoal: number
+  /** Daily macro targets in grams; unset means no target. */
+  macroGoals: Partial<Record<Macro, number>>
   goalWeightKg?: number
 }

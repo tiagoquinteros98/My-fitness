@@ -279,10 +279,49 @@ select:focus {
   transition: width 0.3s;
 }
 .macros {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 8px;
   font-size: 0.8rem;
   color: var(--muted);
+}
+.macro {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.macro strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.macro strong.over {
+  color: var(--red);
+}
+.macro strong small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.progress.thin {
+  height: 4px;
+  margin: 4px 0 2px;
+}
+.macro-carbs .progress > div {
+  background: #0ea5e9;
+}
+.macro-fat .progress > div {
+  background: #a855f7;
+}
+.macro-protein .progress > div {
+  background: #f59e0b;
+}
+.goal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.form p .link {
+  padding: 0;
 }
 
 .meal {

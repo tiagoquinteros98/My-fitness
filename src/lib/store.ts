@@ -14,7 +14,7 @@ const DEFAULT_STATE: State = {
   diary: [],
   weights: [],
   customFoods: [],
-  settings: { calorieGoal: 2000 },
+  settings: { calorieGoal: 2000, macroGoals: {} },
 }
 
 function load(): State {
