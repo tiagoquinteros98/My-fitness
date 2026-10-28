@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { AppState, DiaryEntry, Food, Op, Settings } from '../types'
+import { normalize } from './nutrition'
 
 // The server (/api/state, backed by Redis) is the source of truth, so Claude can log food
 // through the MCP endpoint. The browser keeps a localStorage copy to open instantly and work
@@ -226,4 +227,45 @@ export function findByBarcode(s: AppState, barcode: string): Food | undefined {
     s.customFoods.find((f) => f.barcode === barcode) ??
     s.diary.findLast((e) => e.food.barcode === barcode)?.food
   )
+}
+
+export interface MyFood {
+  food: Food
+  timesLogged: number
+  /** Last time it was logged or saved (ms since epoch). */
+  lastUsed: number
+}
+
+const foodKey = (f: Food) => f.barcode ?? f.id
+
+/** Every food the user saved or logged, with how often it was logged. Saved versions win over diary copies. */
+export function myFoods(s: AppState): MyFood[] {
+  const byKey = new Map<string, MyFood>()
+  s.diary.forEach((e, i) => {
+    const key = foodKey(e.food)
+    const at = e.createdAt ?? i
+    const prev = byKey.get(key)
+    if (!prev) byKey.set(key, { food: e.food, timesLogged: 1, lastUsed: at })
+    else {
+      prev.timesLogged++
+      if (at >= prev.lastUsed) Object.assign(prev, { food: e.food, lastUsed: at })
+    }
+  })
+  for (const f of s.customFoods) {
+    const prev = byKey.get(foodKey(f))
+    if (prev) Object.assign(prev, { food: f, lastUsed: Math.max(prev.lastUsed, f.savedAt ?? 0) })
+    else byKey.set(foodKey(f), { food: f, timesLogged: 0, lastUsed: f.savedAt ?? 0 })
+  }
+  return [...byKey.values()]
+}
+
+/** The user's foods matching every word of the query (name, brand or barcode), most logged first. */
+export function searchMyFoods(s: AppState, query: string): MyFood[] {
+  const words = normalize(query).split(/\s+/).filter(Boolean)
+  return myFoods(s)
+    .filter(({ food: f }) => {
+      const text = normalize(`${f.name} ${f.brand ?? ''} ${f.barcode ?? ''}`)
+      return words.every((w) => text.includes(w))
+    })
+    .sort((a, b) => b.timesLogged - a.timesLogged || b.lastUsed - a.lastUsed)
 }

@@ -8,6 +8,12 @@
   --border: #e5e7eb;
   --green: #16a34a;
   --red: #dc2626;
+  --mine-bg: #eef4ff;
+  --mine-border: #cfe0ff;
+  --tag-custom-bg: #fff1d6;
+  --tag-custom-fg: #8a5300;
+  --tag-off-bg: #e3f6e8;
+  --tag-off-fg: #17663a;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -21,6 +27,12 @@
     --text: #e8eaed;
     --muted: #9aa0a6;
     --border: #2d313a;
+    --mine-bg: #18233a;
+    --mine-border: #26385c;
+    --tag-custom-bg: #3d2e10;
+    --tag-custom-fg: #f5c46a;
+    --tag-off-bg: #133322;
+    --tag-off-fg: #7fd6a0;
   }
 }
 
@@ -634,4 +646,44 @@ select:focus {
   align-self: center;
   color: var(--muted);
   margin-top: 8px;
+}
+
+/* Search sections: the user's own foods stand out from Open Food Facts results */
+.food-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.food-section .list-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 4px 0;
+}
+.list-title.mine {
+  color: var(--blue);
+}
+.card.list.mine {
+  background: var(--mine-bg);
+  border: 1px solid var(--mine-border);
+  box-shadow: none;
+}
+.section-empty {
+  margin: 0 4px;
+}
+.tag {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.tag-custom {
+  background: var(--tag-custom-bg);
+  color: var(--tag-custom-fg);
+}
+.tag-off {
+  background: var(--tag-off-bg);
+  color: var(--tag-off-fg);
 }
