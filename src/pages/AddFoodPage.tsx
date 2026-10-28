@@ -4,7 +4,16 @@ import { findByBarcode, myFoods, recentFoods, searchMyFoods, useStore, type MyFo
 import { MEALS, type Food, type Meal } from '../types'
 
 // The scanner pulls in the ZXing decoder, so load it only when the camera is opened.
-const BarcodeScanner = lazy(() => import('../components/BarcodeScanner'))
+// If this copy of the app is older than the published one, its chunk may be gone: reload once.
+const BarcodeScanner = lazy(() =>
+  import('../components/BarcodeScanner').catch((e) => {
+    if (!sessionStorage.getItem('reloaded-for-chunk')) {
+      sessionStorage.setItem('reloaded-for-chunk', '1')
+      location.reload()
+    }
+    throw e
+  }),
+)
 
 interface Props {
   meal: Meal

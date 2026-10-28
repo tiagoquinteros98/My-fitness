@@ -1,7 +1,8 @@
-// Service worker: makes the app installable and lets it open without connection.
-// Pages: network first, falling back to the cached copy. Hashed build assets: cache first.
-// The API is never cached (the app keeps its own offline copy of the data).
-const CACHE = 'my-fitness-v1'
+// Service worker: makes the app installable and lets it open instantly and offline.
+// The app page is served from cache right away and refreshed in the background, so opening the
+// installed app never waits on the network (a new version shows up on the next open).
+// Hashed build assets: cache first. The API is never cached (the app keeps its own data copy).
+const CACHE = 'my-fitness-v2'
 
 self.addEventListener('install', () => self.skipWaiting())
 
@@ -21,16 +22,30 @@ self.addEventListener('fetch', (event) => {
 
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
-        .then((res) => {
+      (async () => {
+        const cached = url.pathname === '/' ? await caches.match('/') : undefined
+        const network = fetch(req).then(async (res) => {
           // Only cache the real app page, never the login redirect.
           if (res.ok && !res.redirected && url.pathname === '/') {
-            const copy = res.clone()
-            caches.open(CACHE).then((c) => c.put('/', copy))
+            const fresh = await res.clone().text()
+            await (await caches.open(CACHE)).put('/', res.clone())
+            // A new version was published: tell the open app so it can reload when convenient.
+            if (cached && fresh !== (await cached.clone().text())) {
+              for (const client of await self.clients.matchAll({ type: 'window' })) client.postMessage('app-updated')
+            }
           }
           return res
         })
-        .catch(() => caches.match('/').then((r) => r || Response.error())),
+        if (cached) {
+          event.waitUntil(network.catch(() => {}))
+          return cached
+        }
+        try {
+          return await network
+        } catch {
+          return (await caches.match('/')) || Response.error()
+        }
+      })(),
     )
     return
   }

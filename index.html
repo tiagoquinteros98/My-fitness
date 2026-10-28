@@ -9,9 +9,24 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>My Fitness</title>
+    <style>
+      body { margin: 0; background: #f0f2f5; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+      @media (prefers-color-scheme: dark) { body { background: #111318; } }
+      .boot-header { background: #0066ee; color: #fff; font-weight: 700; font-size: 1.15rem; text-align: center;
+        padding: 14px 16px; padding-top: max(14px, env(safe-area-inset-top)); }
+      .boot-spinner { width: 28px; height: 28px; margin: 40vh auto 0; border-radius: 50%;
+        border: 3px solid rgb(0 102 238 / 0.2); border-top-color: #0066ee; animation: boot-spin 0.8s linear infinite; }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Painted before the JS runs, so the installed app's splash goes away sooner. React replaces it. -->
+    <div id="root">
+      <div class="boot">
+        <div class="boot-header">my fitness</div>
+        <div class="boot-spinner"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
