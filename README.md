@@ -24,3 +24,7 @@ Los navegadores solo dan acceso a la cámara en `https` o `localhost`. Para prob
 ## Stack
 
 React + TypeScript + Vite. Escaneo con [`@zxing/browser`](https://github.com/zxing-js/browser) (EAN-13, EAN-8, UPC-A, UPC-E, Code 128).
+
+## Deploy (Vercel)
+
+El sitio está protegido con usuario y contraseña (HTTP Basic Auth) mediante `middleware.ts`. Las credenciales se configuran como variables de entorno del proyecto en Vercel: `BASIC_AUTH_USER` y `BASIC_AUTH_PASSWORD`. Si faltan, el sitio no se sirve.
