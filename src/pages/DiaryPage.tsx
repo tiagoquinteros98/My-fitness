@@ -93,13 +93,6 @@ export default function DiaryPage({ date, onChangeDate, onAddFood, onScanFood, o
             <div className="meal-header">
               <h3>{meal.label}</h3>
               <span className="meal-kcal">{Math.round(mealKcal)}</span>
-              <button
-                className="scan-shortcut"
-                onClick={() => onScanFood(meal.id)}
-                aria-label={`Escanear código de barras para ${meal.label}`}
-              >
-                <BarcodeIcon size={18} />
-              </button>
             </div>
             {mealEntries.map((e) => (
               <div key={e.id} className="entry">
@@ -116,9 +109,18 @@ export default function DiaryPage({ date, onChangeDate, onAddFood, onScanFood, o
                 </button>
               </div>
             ))}
-            <button className="link add" onClick={() => onAddFood(meal.id)}>
-              + Agregar alimento
-            </button>
+            <div className="meal-footer">
+              <button className="link add" onClick={() => onAddFood(meal.id)}>
+                + Agregar alimento
+              </button>
+              <button
+                className="scan-shortcut"
+                onClick={() => onScanFood(meal.id)}
+                aria-label={`Escanear código de barras para ${meal.label}`}
+              >
+                <BarcodeIcon size={18} />
+              </button>
+            </div>
           </section>
         )
       })}

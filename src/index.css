@@ -354,6 +354,15 @@ select:focus {
 .meal-kcal {
   font-weight: 600;
 }
+.meal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+.meal-footer .link.add {
+  padding-top: 6px;
+}
 .scan-shortcut {
   display: grid;
   place-items: center;
