@@ -1,40 +1,25 @@
 import { next } from '@vercel/functions'
+import { hasValidSession, isConfigured } from './server/session.js'
 
-// Vercel Routing Middleware: protects the whole site with HTTP Basic Auth.
-// Credentials come from the BASIC_AUTH_USER / BASIC_AUTH_PASSWORD project env vars.
+// Vercel Routing Middleware: everything requires a session cookie (set by /api/login),
+// except the login page itself and what the browser fetches without cookies to install the app.
 export const config = { matcher: '/:path*' }
 
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-  let diff = 0
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return diff === 0
-}
+const PUBLIC_PATHS = new Set(['/login.html', '/api/login', '/manifest.webmanifest', '/sw.js', '/favicon.svg'])
 
-export default function middleware(request: Request) {
-  // The MCP endpoint authenticates with its own secret (Claude connectors can't send Basic Auth).
-  if (new URL(request.url).pathname.startsWith('/api/mcp/')) return next()
+export default async function middleware(request: Request) {
+  const url = new URL(request.url)
+  // The MCP endpoint authenticates with its own secret (Claude connectors can't log in).
+  if (url.pathname.startsWith('/api/mcp/')) return next()
+  if (PUBLIC_PATHS.has(url.pathname) || url.pathname.startsWith('/icons/')) return next()
 
-  const user = process.env.BASIC_AUTH_USER
-  const password = process.env.BASIC_AUTH_PASSWORD
-  if (!user || !password) return new Response('Auth no configurada', { status: 500 })
+  if (!isConfigured()) return new Response('Auth no configurada', { status: 500 })
+  if (await hasValidSession(request)) return next()
 
-  const header = request.headers.get('authorization') ?? ''
-  if (header.startsWith('Basic ')) {
-    let decoded = ''
-    try {
-      decoded = atob(header.slice(6))
-    } catch {
-      // Malformed header: fall through to 401.
-    }
-    const sep = decoded.indexOf(':')
-    if (sep >= 0 && safeEqual(decoded.slice(0, sep), user) && safeEqual(decoded.slice(sep + 1), password)) {
-      return next()
-    }
+  if (request.method === 'GET' && request.headers.get('accept')?.includes('text/html')) {
+    const login = new URL('/login.html', url)
+    if (url.pathname !== '/') login.searchParams.set('next', url.pathname + url.search)
+    return Response.redirect(login, 302)
   }
-
-  return new Response('Acceso restringido', {
-    status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="My Fitness", charset="UTF-8"' },
-  })
+  return Response.json({ error: 'No autenticado' }, { status: 401 })
 }

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0066ee" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <title>Ingresar · My Fitness</title>
+    <style>
+      :root {
+        --blue: #0066ee;
+        --bg: #f0f2f5;
+        --card: #fff;
+        --text: #1c1e21;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+        --red: #dc2626;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        color: var(--text);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #111318;
+          --card: #1c1f26;
+          --text: #e8eaed;
+          --muted: #9aa0a6;
+          --border: #2d313a;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+      }
+      img {
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+      }
+      h1 {
+        font-size: 1.4rem;
+        margin: 14px 0 24px;
+      }
+      form {
+        width: 100%;
+        max-width: 360px;
+        background: var(--card);
+        border-radius: 14px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      input {
+        font: inherit;
+        font-size: 1rem;
+        color: var(--text);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 11px 12px;
+      }
+      input:focus {
+        outline: 2px solid var(--blue);
+        outline-offset: -1px;
+      }
+      button {
+        font: inherit;
+        font-weight: 600;
+        background: var(--blue);
+        color: #fff;
+        border: 0;
+        border-radius: 10px;
+        padding: 13px;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+      }
+      #error {
+        color: var(--red);
+        margin: 0;
+        text-align: center;
+        min-height: 1.2em;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <img src="/icons/icon-192.png" alt="" />
+    <h1>My Fitness</h1>
+    <form id="form">
+      <label>
+        Usuario
+        <input name="user" autocomplete="username" autocapitalize="none" autocorrect="off" required />
+      </label>
+      <label>
+        Contraseña
+        <input name="password" type="password" autocomplete="current-password" required />
+      </label>
+      <button type="submit">Ingresar</button>
+      <p id="error" role="alert"></p>
+    </form>
+    <script>
+      const form = document.getElementById('form')
+      const error = document.getElementById('error')
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        const button = form.querySelector('button')
+        button.disabled = true
+        error.textContent = ''
+        try {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user: form.user.value.trim(), password: form.password.value }),
+          })
+          if (res.ok) {
+            const next = new URLSearchParams(location.search).get('next')
+            location.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : '/')
+            return
+          }
+          error.textContent = (await res.json().catch(() => ({}))).error || 'No se pudo ingresar'
+        } catch {
+          error.textContent = 'Sin conexión'
+        }
+        button.disabled = false
+      })
+    </script>
+  </body>
+</html>

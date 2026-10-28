@@ -84,6 +84,15 @@ function dispatch(op: Op) {
 
 // --- Server sync ---
 
+function goToLogin() {
+  location.replace('/login.html')
+}
+
+export async function logout() {
+  await fetch('/api/logout', { method: 'POST' }).catch(() => {})
+  goToLogin()
+}
+
 let flushing = false
 let retryTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -97,6 +106,7 @@ async function flush(): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ops: batch }),
     })
+    if (res.status === 401) return goToLogin() // Changes stay queued for after logging in.
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     pending = pending.slice(batch.length)
     writeJSON(PENDING_KEY, pending)
@@ -114,6 +124,7 @@ async function refresh(): Promise<void> {
   let server: AppState & { initialized: boolean }
   try {
     const res = await fetch('/api/state', { cache: 'no-store' })
+    if (res.status === 401) return goToLogin()
     if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) return // No API (e.g. vite dev).
     server = await res.json()
   } catch {

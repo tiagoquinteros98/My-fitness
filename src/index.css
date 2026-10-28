@@ -629,3 +629,9 @@ select:focus {
   color: var(--blue);
   font-weight: 600;
 }
+
+.logout {
+  align-self: center;
+  color: var(--muted);
+  margin-top: 8px;
+}

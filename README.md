@@ -27,7 +27,13 @@ React + TypeScript + Vite. Escaneo con [`@zxing/browser`](https://github.com/zxi
 
 ## Deploy (Vercel)
 
-El sitio está protegido con usuario y contraseña (HTTP Basic Auth) mediante `middleware.ts`. Las credenciales se configuran como variables de entorno del proyecto en Vercel: `BASIC_AUTH_USER` y `BASIC_AUTH_PASSWORD`. Si faltan, el sitio no se sirve.
+El sitio pide usuario y contraseña en `/login.html`; al ingresar queda una cookie de sesión firmada por un año (`middleware.ts` + `server/session.ts`). Cambiar la contraseña cierra la sesión en todos los dispositivos. Tras 10 intentos fallidos desde una IP, el login se bloquea 15 minutos.
+
+Variables: `BASIC_AUTH_USER` y `BASIC_AUTH_PASSWORD` (las credenciales) y `SESSION_SECRET` (firma de la cookie). Si faltan, el sitio no se sirve.
+
+### Instalar como app
+
+Es una PWA (`manifest.webmanifest` + `sw.js`): en Chrome o Brave para Android, menú → "Agregar a la pantalla de inicio" / "Instalar app". Se abre a pantalla completa y funciona sin conexión.
 
 ## MCP para Claude
 
@@ -35,8 +41,8 @@ El sitio está protegido con usuario y contraseña (HTTP Basic Auth) mediante `m
 
 Herramientas: `search_my_foods`, `lookup_barcode`, `log_food`, `save_food`, `get_day_summary`, `delete_diary_entry`, `log_weight`.
 
-La clave secreta en la URL es la credencial (los conectores no envían Basic Auth); está en la variable de entorno `MCP_SECRET` (mínimo 32 caracteres). Para rotarla, cambiá la variable, redeployá y actualizá la URL del conector.
+La clave secreta en la URL es la credencial (los conectores no pueden iniciar sesión); está en la variable de entorno `MCP_SECRET` (mínimo 32 caracteres). Para rotarla, cambiá la variable, redeployá y actualizá la URL del conector.
 
-Variables de entorno: `KV_REST_API_URL`, `KV_REST_API_TOKEN` (las crea la integración de Upstash), `MCP_SECRET`, `BASIC_AUTH_USER`, `BASIC_AUTH_PASSWORD`. `DATA_PREFIX` (opcional) cambia el prefijo de las claves en Redis, útil para probar sin tocar los datos reales.
+Variables de entorno: `KV_REST_API_URL`, `KV_REST_API_TOKEN` (las crea la integración de Upstash), `MCP_SECRET`, `BASIC_AUTH_USER`, `BASIC_AUTH_PASSWORD`, `SESSION_SECRET`. `DATA_PREFIX` (opcional) cambia el prefijo de las claves en Redis, útil para probar sin tocar los datos reales.
 
 Para correr todo localmente (app + API + MCP): `vercel env pull .env.local && vercel dev`.

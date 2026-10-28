@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import WeightChart from '../components/WeightChart'
-import { actions, useStore } from '../lib/store'
+import { actions, logout, useStore } from '../lib/store'
 import { formatDate, todayISO } from '../lib/dates'
 
 export default function WeightPage() {
@@ -112,6 +112,10 @@ export default function WeightPage() {
           </div>
         </>
       )}
+
+      <button className="link center logout" onClick={() => void logout()}>
+        Cerrar sesión
+      </button>
     </div>
   )
 }
