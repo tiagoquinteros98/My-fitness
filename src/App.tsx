@@ -1,0 +1,91 @@
+import { useState } from 'react'
+import AddFoodPage from './pages/AddFoodPage'
+import CreateFoodPage from './pages/CreateFoodPage'
+import DiaryPage from './pages/DiaryPage'
+import FoodDetailPage from './pages/FoodDetailPage'
+import WeightPage from './pages/WeightPage'
+import { todayISO } from './lib/dates'
+import type { DiaryEntry, Food, Meal } from './types'
+
+type Tab = 'diary' | 'weight'
+
+type Screen =
+  | { name: 'tab' }
+  | { name: 'addFood'; meal: Meal }
+  | { name: 'createFood'; meal: Meal; barcode?: string }
+  | { name: 'foodDetail'; meal: Meal; food: Food; entry?: DiaryEntry; from: 'addFood' | 'tab' }
+
+export default function App() {
+  const [tab, setTab] = useState<Tab>('diary')
+  const [date, setDate] = useState(todayISO())
+  const [screen, setScreen] = useState<Screen>({ name: 'tab' })
+  const home = () => setScreen({ name: 'tab' })
+
+  let content
+  switch (screen.name) {
+    case 'addFood':
+      content = (
+        <AddFoodPage
+          meal={screen.meal}
+          onBack={home}
+          onSelectFood={(food) => setScreen({ name: 'foodDetail', meal: screen.meal, food, from: 'addFood' })}
+          onCreateFood={(barcode) => setScreen({ name: 'createFood', meal: screen.meal, barcode })}
+        />
+      )
+      break
+    case 'createFood':
+      content = (
+        <CreateFoodPage
+          barcode={screen.barcode}
+          onBack={() => setScreen({ name: 'addFood', meal: screen.meal })}
+          onCreated={(food) => setScreen({ name: 'foodDetail', meal: screen.meal, food, from: 'addFood' })}
+        />
+      )
+      break
+    case 'foodDetail':
+      content = (
+        <FoodDetailPage
+          food={screen.food}
+          entry={screen.entry}
+          date={date}
+          meal={screen.meal}
+          onBack={() => (screen.from === 'addFood' ? setScreen({ name: 'addFood', meal: screen.meal }) : home())}
+          onDone={home}
+        />
+      )
+      break
+    default:
+      content =
+        tab === 'diary' ? (
+          <DiaryPage
+            date={date}
+            onChangeDate={setDate}
+            onAddFood={(meal) => setScreen({ name: 'addFood', meal })}
+            onEditEntry={(entry) =>
+              setScreen({ name: 'foodDetail', meal: entry.meal, food: entry.food, entry, from: 'tab' })
+            }
+          />
+        ) : (
+          <WeightPage />
+        )
+  }
+
+  return (
+    <div className="app">
+      <header className="app-header">my fitness</header>
+      <main>{content}</main>
+      {screen.name === 'tab' && (
+        <nav className="tabbar">
+          <button className={tab === 'diary' ? 'active' : ''} onClick={() => setTab('diary')}>
+            <span aria-hidden>📖</span>
+            Diario
+          </button>
+          <button className={tab === 'weight' ? 'active' : ''} onClick={() => setTab('weight')}>
+            <span aria-hidden>⚖️</span>
+            Peso
+          </button>
+        </nav>
+      )}
+    </div>
+  )
+}
