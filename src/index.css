@@ -753,3 +753,239 @@ select:focus {
   background: var(--tag-off-bg);
   color: var(--tag-off-fg);
 }
+
+/* --- Gym --- */
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+.segmented button {
+  border: 0;
+  background: none;
+  border-radius: 9px;
+  padding: 9px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.segmented button[aria-selected='true'] {
+  background: var(--blue);
+  color: #fff;
+}
+.days {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.day {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  border-radius: 10px;
+  padding: 11px 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.day[aria-pressed='true'] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+.datebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.datebar input {
+  width: auto;
+  flex: 1;
+  font-weight: 600;
+}
+.exercises {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.ex {
+  padding: 14px 0 6px;
+  border-top: 1px solid var(--border);
+}
+.ex:first-child {
+  border-top: 0;
+}
+.ex-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ex-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+.ex-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+a.vid {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  color: var(--blue);
+  background: var(--mine-bg);
+}
+a.vid svg {
+  width: 21px;
+  height: 21px;
+}
+.last {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 9px;
+  margin: 10px 0 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.last b {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--blue);
+  line-height: 1;
+}
+.last b small {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.last.none b {
+  color: var(--border);
+}
+.delta {
+  font-weight: 600;
+}
+.delta.up {
+  color: var(--green);
+}
+.delta.down {
+  color: var(--red);
+}
+.sets {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+.set {
+  display: grid;
+  grid-template-columns: 22px 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.set-n {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.set-field {
+  position: relative;
+}
+.set-field input {
+  font-weight: 600;
+  padding-right: 42px;
+}
+.set-field span {
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.78rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+.set.filled input {
+  background: var(--mine-bg);
+  border-color: var(--mine-border);
+}
+.vol {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.vol b {
+  font-size: 1.15rem;
+  font-weight: 800;
+  min-width: 28px;
+}
+.vol-group {
+  flex: 1;
+}
+.vol-status {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.vol-status.ok {
+  color: var(--green);
+}
+.gym-bar {
+  position: sticky;
+  bottom: calc(64px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.08);
+}
+.btn.ghost {
+  background: none;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn.ghost:hover {
+  background: var(--bg);
+}
+.ex-pick {
+  font-weight: 600;
+}
+table.log {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+table.log th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+table.log td {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+table.log tr:last-child td {
+  border-bottom: 0;
+}
+table.log td:last-child,
+table.log th:last-child {
+  text-align: right;
+}

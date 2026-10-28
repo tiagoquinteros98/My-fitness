@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { AppState, DiaryEntry, Food, Op, Settings } from '../types'
+import type { AppState, DiaryEntry, Food, Op, Settings, WorkoutSession, WorkoutSet } from '../types'
 import { normalize } from './nutrition'
 
 // The server (/api/state, backed by Redis) is the source of truth, so Claude can log food
@@ -13,6 +13,7 @@ const DEFAULT_STATE: AppState = {
   diary: [],
   weights: [],
   customFoods: [],
+  workouts: [],
   settings: { calorieGoal: 2000, macroGoals: {} },
 }
 
@@ -71,16 +72,34 @@ function applyOp(s: AppState, op: Op): AppState {
       return { ...s, customFoods: [op.food, ...s.customFoods.filter((f) => f.id !== op.food.id)] }
     case 'putSettings':
       return { ...s, settings: op.settings }
+    case 'putWorkout':
+      return {
+        ...s,
+        workouts: [...s.workouts.filter((w) => w.id !== op.session.id), op.session].sort((a, b) =>
+          a.date.localeCompare(b.date),
+        ),
+      }
+    case 'deleteWorkout':
+      return { ...s, workouts: s.workouts.filter((w) => w.id !== op.id) }
     case 'import':
       return s // Uploads what the browser already has.
   }
 }
 
+let flushTimer: ReturnType<typeof setTimeout> | undefined
+
 function dispatch(op: Op) {
   setState(applyOp(state, op))
+  if (op.type === 'putWorkout') {
+    // Typing a set dispatches on every keystroke: keep only the latest copy of the session
+    // and send it once typing pauses.
+    pending = pending.filter((p) => !(p.type === 'putWorkout' && p.session.id === op.session.id))
+  }
   pending.push(op)
   writeJSON(PENDING_KEY, pending)
-  void flush()
+  clearTimeout(flushTimer)
+  if (op.type === 'putWorkout') flushTimer = setTimeout(() => void flush(), 800)
+  else void flush()
 }
 
 // --- Server sync ---
@@ -109,7 +128,7 @@ async function flush(): Promise<void> {
     })
     if (res.status === 401) return goToLogin() // Changes stay queued for after logging in.
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    pending = pending.slice(batch.length)
+    pending = pending.filter((op) => !batch.includes(op))
     writeJSON(PENDING_KEY, pending)
   } catch {
     clearTimeout(retryTimer)
@@ -131,7 +150,8 @@ async function refresh(): Promise<void> {
   } catch {
     return // Offline: keep the local copy.
   }
-  const hasLocalData = state.diary.length > 0 || state.weights.length > 0 || state.customFoods.length > 0
+  const hasLocalData =
+    state.diary.length > 0 || state.weights.length > 0 || state.customFoods.length > 0 || state.workouts.length > 0
   if (!server.initialized && hasLocalData) {
     // First time against the server: upload what this browser has stored, then load the merge.
     // A browser without data never does this, so it can't mark the store initialized and make
@@ -194,6 +214,42 @@ export const actions = {
     // Same barcode replaces the earlier food instead of creating a duplicate.
     const existing = food.barcode && state.customFoods.find((f) => f.barcode === food.barcode)
     dispatch({ type: 'putFood', food: { ...food, id: existing ? existing.id : food.id, savedAt: Date.now() } })
+  },
+
+  /** Current copy of a workout session (fresh, not from a past render). */
+  getWorkout(id: string): WorkoutSession | undefined {
+    return state.workouts.find((w) => w.id === id)
+  },
+  saveWorkout(session: WorkoutSession) {
+    dispatch({ type: 'putWorkout', session })
+  },
+  deleteWorkout(id: string) {
+    dispatch({ type: 'deleteWorkout', id })
+  },
+
+  /**
+   * Merges a backup from the previous standalone training log ("Descargar copia"):
+   * { sesiones: { "fecha|día": { ejercicio: [{kg, reps}] } }, peso: { fecha: kg } }.
+   * Existing sessions and weigh-ins on the same date are kept.
+   */
+  importTrainingBackup(data: unknown): { sessions: number; weights: number } {
+    const d = data as { sesiones?: Record<string, Record<string, (WorkoutSet | null)[]>>; peso?: Record<string, number> }
+    if (!d || typeof d !== 'object' || (!d.sesiones && !d.peso)) throw new Error('No es una copia del registro')
+    let sessions = 0
+    let weights = 0
+    for (const [id, exercises] of Object.entries(d.sesiones ?? {})) {
+      const [date, day] = id.split('|')
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !day || state.workouts.some((w) => w.id === id)) continue
+      dispatch({ type: 'putWorkout', session: { id, date, day, exercises } })
+      sessions++
+    }
+    for (const [date, kg] of Object.entries(d.peso ?? {})) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !(kg > 0) || state.weights.some((w) => w.date === date)) continue
+      dispatch({ type: 'putWeight', entry: { id: newId(), date, kg } })
+      weights++
+    }
+    void flush()
+    return { sessions, weights }
   },
 
   updateSettings(patch: Partial<Settings>) {

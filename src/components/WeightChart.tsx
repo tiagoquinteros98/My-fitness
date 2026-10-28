@@ -4,13 +4,14 @@ import type { WeightEntry } from '../types'
 interface Props {
   data: WeightEntry[]
   goal?: number
+  label?: string
 }
 
 const W = 340
 const H = 180
 const PAD = { top: 12, right: 12, bottom: 24, left: 36 }
 
-export default function WeightChart({ data, goal }: Props) {
+export default function WeightChart({ data, goal, label = 'Evolución del peso' }: Props) {
   const points = data.slice(-30)
   const values = points.map((p) => p.kg).concat(goal ? [goal] : [])
   let min = Math.min(...values)
@@ -31,7 +32,7 @@ export default function WeightChart({ data, goal }: Props) {
   const ticks = [min, (min + max) / 2, max]
 
   return (
-    <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Evolución del peso">
+    <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
       {ticks.map((t) => (
         <g key={t}>
           <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} className="grid" />

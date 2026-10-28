@@ -3,11 +3,12 @@ import AddFoodPage from './pages/AddFoodPage'
 import CreateFoodPage from './pages/CreateFoodPage'
 import DiaryPage from './pages/DiaryPage'
 import FoodDetailPage from './pages/FoodDetailPage'
+import GymPage from './pages/GymPage'
 import WeightPage from './pages/WeightPage'
 import { todayISO } from './lib/dates'
 import type { DiaryEntry, Food, Meal } from './types'
 
-type Tab = 'diary' | 'weight'
+type Tab = 'diary' | 'weight' | 'gym'
 
 type Screen =
   | { name: 'tab' }
@@ -68,8 +69,10 @@ export default function App() {
               setScreen({ name: 'foodDetail', meal: entry.meal, food: entry.food, entry, from: 'tab' })
             }
           />
-        ) : (
+        ) : tab === 'weight' ? (
           <WeightPage />
+        ) : (
+          <GymPage />
         )
   }
 
@@ -86,6 +89,10 @@ export default function App() {
           <button className={tab === 'weight' ? 'active' : ''} onClick={() => setTab('weight')}>
             <span aria-hidden>⚖️</span>
             Peso
+          </button>
+          <button className={tab === 'gym' ? 'active' : ''} onClick={() => setTab('gym')}>
+            <span aria-hidden>🏋️</span>
+            Gym
           </button>
         </nav>
       )}

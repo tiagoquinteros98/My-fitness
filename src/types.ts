@@ -59,10 +59,24 @@ export interface Settings {
   goalWeightKg?: number
 }
 
+export interface WorkoutSet {
+  kg: number
+  reps: number
+}
+
+/** One routine day trained on one date. Sets are by exercise name, in order (gaps are null). */
+export interface WorkoutSession {
+  id: string // `${date}|${day}`
+  date: string // YYYY-MM-DD
+  day: string // routine day, e.g. "Lunes"
+  exercises: Record<string, (WorkoutSet | null)[]>
+}
+
 export interface AppState {
   diary: DiaryEntry[]
   weights: WeightEntry[]
   customFoods: Food[]
+  workouts: WorkoutSession[]
   settings: Settings
 }
 
@@ -74,5 +88,7 @@ export type Op =
   | { type: 'deleteWeight'; date: string }
   | { type: 'putFood'; food: Food }
   | { type: 'putSettings'; settings: Settings }
+  | { type: 'putWorkout'; session: WorkoutSession }
+  | { type: 'deleteWorkout'; id: string }
   /** One-time upload of the data kept in the browser before the server existed. */
   | { type: 'import'; state: AppState }

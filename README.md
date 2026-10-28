@@ -1,9 +1,10 @@
 # My Fitness
 
-Clon simple de MyFitnessPal con dos funciones:
+Clon simple de MyFitnessPal con tres secciones:
 
 - **Diario de comidas**: agregá alimentos a Desayuno, Almuerzo, Cena o Snacks, buscándolos por nombre o **escaneando el código de barras** con la cámara. Muestra calorías y macros (carbohidratos, grasas, proteínas) y las calorías restantes contra un objetivo diario.
 - **Registro de peso**: un peso por día, gráfico de evolución, historial, cambio total y peso objetivo.
+- **Gym**: la rutina de tres días (Lunes, Miércoles, Viernes) para anotar peso y repeticiones de cada serie, con tu mejor serie anterior como referencia, video de técnica en TikTok (en Android abre la app; si no está instalada, el navegador), series y kilos movidos del día, volumen semanal por grupo y progreso por ejercicio. La rutina está en `src/lib/routine.ts`; las series se guardan por nombre de ejercicio, así que no conviene renombrar uno que ya tiene historial. Se puede importar la copia (`.json`) del registro de entrenamiento anterior.
 
 Los datos de los productos vienen de [Open Food Facts](https://world.openfoodfacts.org) (gratis, sin API key). Si un código no existe, podés crear el alimento a mano y queda guardado con ese código para la próxima vez.
 
