@@ -1,9 +1,12 @@
 import { useRef, useState } from 'react'
-import WeightChart from '../components/WeightChart'
+import AllProgressChart, { type ProgressSeries } from '../components/AllProgressChart'
+import ExerciseProgressSheet from '../components/ExerciseProgressSheet'
 import { formatDate, todayISO } from '../lib/dates'
+import { familyColor, familyIndex, GROUP_FAMILIES, groupOfExercise } from '../lib/muscleGroups'
 import {
   allExerciseNames,
   dayForDate,
+  estimated1RM,
   exerciseHistory,
   routineOf,
   sessionId,
@@ -47,6 +50,7 @@ function TrainView() {
   const day = routineDay?.name ?? chosenDay
   // Set inputs are uncontrolled; bumping this remounts them empty after "Vaciar día".
   const [resets, setResets] = useState(0)
+  const [progressOf, setProgressOf] = useState<string | null>(null)
   const id = sessionId(date, day)
   const session = state.workouts.find((w) => w.id === id)
   const exercises = routineDay?.exercises ?? []
@@ -106,6 +110,7 @@ function TrainView() {
             state={state}
             date={date}
             onSet={(i, field, raw) => updateSet(ex, i, field, raw)}
+            onShowProgress={() => setProgressOf(ex.n)}
           />
         ))}
       </section>
@@ -124,6 +129,8 @@ function TrainView() {
           el trabajo real de brazo es mayor al que figura acá.
         </p>
       </section>
+
+      {progressOf && <ExerciseProgressSheet name={progressOf} onClose={() => setProgressOf(null)} />}
 
       <div className="gym-bar">
         <span>
@@ -152,12 +159,14 @@ function ExerciseBlock({
   state,
   date,
   onSet,
+  onShowProgress,
 }: {
   ex: Exercise
   session?: WorkoutSession
   state: AppState
   date: string
   onSet: (i: number, field: 'kg' | 'reps', raw: string) => void
+  onShowProgress: () => void
 }) {
   const sets = session?.exercises[ex.n] ?? []
   const previous = exerciseHistory(state, ex.n)
@@ -175,6 +184,18 @@ function ExerciseBlock({
             {ex.s} × {ex.r} · {ex.rir} · {ex.g}
           </div>
         </div>
+        <div className="ex-actions">
+        <button
+          className="vid"
+          onClick={onShowProgress}
+          title={`Ver el progreso de ${ex.n}`}
+          aria-label={`Ver el progreso de ${ex.n}`}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M3 3v18h18" />
+            <path d="m7 15 4-4 3 3 6-6" />
+          </svg>
+        </button>
         <a
           className="vid"
           href={tiktokSearchUrl(ex.n)}
@@ -191,6 +212,7 @@ function ExerciseBlock({
             <path d="M15.5 10.5 21 7.5v9l-5.5-3z" />
           </svg>
         </a>
+        </div>
       </div>
 
       {previous ? (
@@ -275,15 +297,28 @@ function SetField({
 
 function ProgressView() {
   const state = useStore()
-  const names = allExerciseNames(state)
-  const [chosen, setExercise] = useState(names[0])
-  const exercise = names.includes(chosen) ? chosen : names[0]
+  const [highlight, setHighlight] = useState<number | null>(null)
+  const [progressOf, setProgressOf] = useState<string | null>(null)
   const [importMsg, setImportMsg] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-  const history = exerciseHistory(state, exercise)
-  const first = history[0]
-  const last = history.at(-1)
-  const change = first && last ? Math.round((last.kg - first.kg) * 10) / 10 : 0
+
+  // One series per exercise with history, indexed to its first session's estimated 1RM.
+  const series: (ProgressSeries & { last: { kg: number; reps: number } })[] = allExerciseNames(state).flatMap((name) => {
+    const history = exerciseHistory(state, name)
+    if (!history.length) return []
+    const base = estimated1RM(history[0])
+    return [
+      {
+        name,
+        family: familyIndex(groupOfExercise(state, name)),
+        points: history.map((h) => ({ date: h.date, kg: h.kg, reps: h.reps, pct: (estimated1RM(h) / base - 1) * 100 })),
+        last: history.at(-1)!,
+      },
+    ]
+  })
+  const byFamily = GROUP_FAMILIES.map((f, i) => ({ ...f, i, items: series.filter((s) => s.family === i) })).filter(
+    (f) => f.items.length && (highlight === null || highlight === f.i),
+  )
 
   async function importFile(file: File) {
     try {
@@ -296,61 +331,46 @@ function ProgressView() {
 
   return (
     <>
-      <select className="ex-pick" value={exercise} onChange={(e) => setExercise(e.target.value)} aria-label="Ejercicio">
-        {names.map((n) => (
-          <option key={n}>{n}</option>
-        ))}
-      </select>
-
       <section className="card">
-        {history.length >= 2 ? (
+        <h3>Progreso de todos los ejercicios</h3>
+        {series.length ? (
           <>
-            <WeightChart
-              data={history.map((h) => ({ id: h.date, date: h.date, kg: h.kg }))}
-              label={`Progreso de ${exercise}`}
-            />
+            <AllProgressChart series={series} highlight={highlight} onHighlight={setHighlight} />
             <p className="muted small">
-              Mejor serie de cada sesión.{' '}
-              {change > 0 ? `Subiste ${change} kg` : change < 0 ? `Bajaste ${Math.abs(change)} kg` : 'Sin cambios'} desde el{' '}
-              {shortDate(first!.date)}. Última: {last!.kg} kg × {last!.reps}.
+              Cambio del 1RM estimado (con la mejor serie de cada sesión) respecto de la primera vez que registraste cada
+              ejercicio, así todos entran en la misma escala. Tocá un grupo para resaltarlo.
             </p>
           </>
         ) : (
-          <p className="muted small">
-            {history.length === 1
-              ? 'Una sola sesión registrada. Con dos ya se puede ver la tendencia.'
-              : 'Todavía no registraste este ejercicio.'}
-          </p>
+          <p className="muted small">Cuando registres series en Entrenamiento, acá vas a ver el progreso de cada ejercicio.</p>
         )}
       </section>
 
-      {history.length > 0 && (
-        <>
-          <h4 className="list-title">Sesiones registradas</h4>
-          <section className="card">
-            <table className="log">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Mejor serie</th>
-                  <th>Series</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...history].reverse().map((h) => (
-                  <tr key={h.date}>
-                    <td>{formatDate(h.date, { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
-                    <td>
-                      {h.kg} kg × {h.reps}
-                    </td>
-                    <td>{h.sets}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        </>
-      )}
+      {byFamily.map((f) => (
+        <section key={f.label} className="card progress-group">
+          <h4 className="group-chip">
+            <i style={{ background: familyColor(f.i) }} />
+            {f.label}
+          </h4>
+          {f.items.map((s) => {
+            const pct = Math.round(s.points.at(-1)!.pct * 10) / 10
+            return (
+              <button key={s.name} className="progress-row" onClick={() => setProgressOf(s.name)}>
+                <span className="entry-name">{s.name}</span>
+                <small>
+                  {s.last.kg} kg × {s.last.reps} · {s.points.length === 1 ? '1 sesión' : `${s.points.length} sesiones`}
+                </small>
+                <b>{s.points.length > 1 ? `${pct > 0 ? '+' : ''}${pct}%` : '—'}</b>
+                <span className="chevron" aria-hidden>
+                  ›
+                </span>
+              </button>
+            )
+          })}
+        </section>
+      ))}
+
+      {progressOf && <ExerciseProgressSheet name={progressOf} onClose={() => setProgressOf(null)} />}
 
       <section className="card form">
         <h3>Importar el registro anterior</h3>

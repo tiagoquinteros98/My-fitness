@@ -5,13 +5,15 @@ interface Props {
   data: WeightEntry[]
   goal?: number
   label?: string
+  /** Line color (CSS color); defaults to the app's blue. */
+  color?: string
 }
 
 const W = 340
 const H = 180
 const PAD = { top: 12, right: 12, bottom: 24, left: 36 }
 
-export default function WeightChart({ data, goal, label = 'Evolución del peso' }: Props) {
+export default function WeightChart({ data, goal, label = 'Evolución del peso', color }: Props) {
   const points = data.slice(-30)
   const values = points.map((p) => p.kg).concat(goal ? [goal] : [])
   let min = Math.min(...values)
@@ -32,7 +34,13 @@ export default function WeightChart({ data, goal, label = 'Evolución del peso' 
   const ticks = [min, (min + max) / 2, max]
 
   return (
-    <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
+    <svg
+      className="chart"
+      viewBox={`0 0 ${W} ${H}`}
+      role="img"
+      aria-label={label}
+      style={color ? ({ '--chart-line': color } as React.CSSProperties) : undefined}
+    >
       {ticks.map((t) => (
         <g key={t}>
           <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} className="grid" />

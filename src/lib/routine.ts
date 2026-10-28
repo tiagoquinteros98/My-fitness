@@ -109,3 +109,8 @@ export function weeklyVolume(routine: RoutineDay[]): { group: string; sets: numb
       status: sets === 0 ? 'sin trabajo directo' : sets < 10 ? 'bajo el rango' : sets > 20 ? 'sobre el rango' : 'en rango',
     }))
 }
+
+/** Estimated one-rep max (Epley), capped at 12 reps where the formula stops being useful. */
+export function estimated1RM(set: { kg: number; reps: number }): number {
+  return set.kg * (1 + Math.min(set.reps, 12) / 30)
+}
