@@ -39,7 +39,7 @@ Es una PWA (`manifest.webmanifest` + `sw.js`): en Chrome o Brave para Android, m
 
 `/api/mcp/<MCP_SECRET>` es un servidor MCP (Streamable HTTP) para agregarlo como conector en Claude. Permite mandarle a Claude la foto de una tabla nutricional (o de un plato) con los gramos, y que registre la comida en el diario y la guarde en la base de alimentos, con su código de barras para que el escáner la encuentre después.
 
-Herramientas: `search_my_foods`, `lookup_barcode`, `log_food`, `save_food`, `get_day_summary`, `delete_diary_entry`, `log_weight`.
+Herramientas: `search_my_foods`, `lookup_barcode`, `log_food`, `save_food`, `get_day_summary`, `delete_diary_entry`, `log_weight`, y para evaluar el progreso `get_weight_history`, `get_food_history` y `get_progress_report` (ingesta vs. tendencia de peso y gasto diario estimado por balance energético).
 
 La clave secreta en la URL es la credencial (los conectores no pueden iniciar sesión); está en la variable de entorno `MCP_SECRET` (mínimo 32 caracteres). Para rotarla, cambiá la variable, redeployá y actualizá la URL del conector.
 

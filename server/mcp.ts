@@ -4,6 +4,7 @@ import { lookupBarcode } from '../src/lib/openFoodFacts.js'
 import { normalize, nutrientsFor } from '../src/lib/nutrition.js'
 import { MACROS, MEALS, type AppState, type DiaryEntry, type Food, type Meal } from '../src/types.js'
 import { applyOps, readState } from './db.js'
+import { foodHistoryReport, progressReport, rangeOf, weightHistoryReport } from './history.js'
 
 const TIME_ZONE = 'America/Argentina/Buenos_Aires'
 
@@ -15,7 +16,9 @@ Cómo cargar comida:
 - Solo un nombre: usá primero search_my_foods; si no está, lookup_barcode si hay código; si no, usá valores nutricionales típicos.
 - Si el usuario no dice los gramos ni porciones, preguntale. Si no dice la comida (desayuno, almuerzo, cena, snacks), inferila por la hora o preguntá.
 - Fechas en formato YYYY-MM-DD; si no se indica, es hoy (hora de Argentina).
-Después de registrar, contale al usuario qué se cargó y cómo va el día respecto a sus objetivos.`
+Después de registrar, contale al usuario qué se cargó y cómo va el día respecto a sus objetivos.
+
+Para evaluar el progreso: get_progress_report (ingesta vs. peso y gasto estimado), get_weight_history y get_food_history (agregá include_foods para ver qué comió cada día). Basá las recomendaciones en los datos, mencioná cuántos días hay registrados, y aclará que no reemplaza a un profesional de la salud.`
 
 const MEAL_IDS = MEALS.map((m) => m.id) as [Meal, ...Meal[]]
 const mealLabel = (m: Meal) => MEALS.find((x) => x.id === m)!.label
@@ -284,6 +287,64 @@ export function createMcpServer(): McpServer {
           (previous ? ` Anterior: ${previous.kg} kg (${previous.date}).` : '') +
           (goal ? ` Objetivo: ${goal} kg.` : ''),
       )
+    },
+  )
+
+  const dateArg = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  const rangeArgs = {
+    from: dateArg.optional().describe('YYYY-MM-DD; por defecto 30 días antes de "to"'),
+    to: dateArg.optional().describe('YYYY-MM-DD; por defecto hoy'),
+  }
+  const checkRange = (from?: string, to?: string) => {
+    const range = rangeOf(today(), from, to)
+    return range.from > range.to ? 'La fecha "from" es posterior a "to".' : range
+  }
+
+  server.registerTool(
+    'get_weight_history',
+    {
+      description:
+        'Historial de peso en un rango (por defecto los últimos 30 días): cada pesaje, cambio, mínimo/máximo, promedio de 7 días, tendencia semanal y distancia/tiempo estimado al peso objetivo.',
+      inputSchema: rangeArgs,
+      annotations: { readOnlyHint: true },
+    },
+    async ({ from, to }) => {
+      const range = checkRange(from, to)
+      if (typeof range === 'string') return { ...text(range), isError: true }
+      return text(weightHistoryReport(await readState(), range))
+    },
+  )
+
+  server.registerTool(
+    'get_food_history',
+    {
+      description:
+        'Historial de comidas en un rango (por defecto los últimos 30 días): totales por día, promedios, reparto de macros, días que cumplieron los objetivos, alimentos más frecuentes y promedio por comida. Con include_foods lista qué comió cada día.',
+      inputSchema: {
+        ...rangeArgs,
+        include_foods: z.boolean().default(false).describe('Incluir el detalle de alimentos de cada día'),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ from, to, include_foods }) => {
+      const range = checkRange(from, to)
+      if (typeof range === 'string') return { ...text(range), isError: true }
+      return text(foodHistoryReport(await readState(), range, include_foods))
+    },
+  )
+
+  server.registerTool(
+    'get_progress_report',
+    {
+      description:
+        'Evaluación del progreso en un rango (por defecto los últimos 30 días): ingesta promedio vs. tendencia de peso, gasto calórico diario estimado por balance energético y calorías sugeridas para mantener o bajar 0,5 kg/semana.',
+      inputSchema: rangeArgs,
+      annotations: { readOnlyHint: true },
+    },
+    async ({ from, to }) => {
+      const range = checkRange(from, to)
+      if (typeof range === 'string') return { ...text(range), isError: true }
+      return text(progressReport(await readState(), range))
     },
   )
 
