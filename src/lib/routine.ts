@@ -1,20 +1,8 @@
-import type { AppState } from '../types'
+import type { AppState, Exercise, RoutineDay } from '../types.js'
 
-export interface Exercise {
-  /** Name; also the key sets are stored under, so don't rename exercises that have history. */
-  n: string
-  /** Muscle group. */
-  g: string
-  /** Sets. */
-  s: number
-  /** Reps per set. */
-  r: string
-  rir: string
-  /** Suggested starting weight. */
-  w: string
-}
+export type { Exercise, RoutineDay }
 
-export const ROUTINE: Record<string, Exercise[]> = {
+const DEFAULT_ROUTINE_BY_DAY: Record<string, Exercise[]> = {
   Lunes: [
     { n: 'Sentadilla hack', g: 'Cuádriceps', s: 4, r: '8', rir: 'RIR 2', w: '90 kg' },
     { n: 'Prensa 45°', g: 'Cuádriceps', s: 3, r: '12', rir: 'RIR 2', w: '100 kg' },
@@ -52,13 +40,33 @@ export const ROUTINE: Record<string, Exercise[]> = {
   ],
 }
 
-export const ROUTINE_DAYS = Object.keys(ROUTINE)
+/** The routine the app started with; used until it's edited. */
+export const DEFAULT_ROUTINE: RoutineDay[] = Object.entries(DEFAULT_ROUTINE_BY_DAY).map(([name, exercises]) => ({
+  name,
+  exercises,
+}))
 
-/** Routine day for a date: Mon–Tue → Lunes, Wed–Thu → Miércoles, Fri–Sun → Viernes. */
-export function dayForDate(iso: string): string {
+export function routineOf(state: AppState): RoutineDay[] {
+  return state.routine?.length ? state.routine : DEFAULT_ROUTINE
+}
+
+const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+const weekdayOf = (name: string) => WEEKDAYS.indexOf(name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim())
+
+/**
+ * Routine day to train on a date: the latest routine day named after a weekday that falls on or
+ * before that date's weekday (Mon–Tue → Lunes, Wed–Thu → Miércoles, Fri–Sun → Viernes), wrapping
+ * to the week's last one. Routines whose days aren't weekday names start on their first day.
+ */
+export function dayForDate(routine: RoutineDay[], iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
-  const weekday = new Date(y, m - 1, d).getDay() // 0 = Sunday
-  return weekday >= 1 && weekday <= 2 ? 'Lunes' : weekday >= 3 && weekday <= 4 ? 'Miércoles' : 'Viernes'
+  const today = (new Date(y, m - 1, d).getDay() + 6) % 7 // Monday = 0
+  const named = routine
+    .map((day) => ({ name: day.name, wd: (weekdayOf(day.name) + 6) % 7 }))
+    .filter((x) => weekdayOf(x.name) >= 0)
+    .sort((a, b) => a.wd - b.wd)
+  if (!named.length) return routine[0]?.name ?? ''
+  return (named.filter((x) => x.wd <= today).at(-1) ?? named.at(-1)!).name
 }
 
 export const sessionId = (date: string, day: string) => `${date}|${day}`
@@ -82,10 +90,17 @@ export function exerciseHistory(state: AppState, name: string): BestSet[] {
   return out.sort((a, b) => a.date.localeCompare(b.date))
 }
 
+/** Exercises in the routine plus any with logged history, so removed ones stay reviewable. */
+export function allExerciseNames(state: AppState): string[] {
+  const names = routineOf(state).flatMap((d) => d.exercises.map((e) => e.n))
+  for (const w of state.workouts) names.push(...Object.keys(w.exercises))
+  return [...new Set(names)]
+}
+
 /** Direct sets per week by muscle group across the routine, with the 10–20 sets guideline. */
-export function weeklyVolume(): { group: string; sets: number; status: string }[] {
+export function weeklyVolume(routine: RoutineDay[]): { group: string; sets: number; status: string }[] {
   const count: Record<string, number> = {}
-  for (const ex of Object.values(ROUTINE).flat()) count[ex.g] = (count[ex.g] ?? 0) + ex.s
+  for (const ex of routine.flatMap((d) => d.exercises)) count[ex.g] = (count[ex.g] ?? 0) + ex.s
   return Object.entries(count)
     .sort((a, b) => b[1] - a[1])
     .map(([group, sets]) => ({
@@ -93,33 +108,4 @@ export function weeklyVolume(): { group: string; sets: number; status: string }[
       sets,
       status: sets === 0 ? 'sin trabajo directo' : sets < 10 ? 'bajo el rango' : sets > 20 ? 'sobre el rango' : 'en rango',
     }))
-}
-
-// --- Technique videos on TikTok ---
-
-const TIKTOK_PACKAGE = 'com.zhiliaoapp.musically'
-
-/** Search query for an exercise's technique, URL-encoded. */
-export function tiktokQuery(name: string): string {
-  return encodeURIComponent(name.replace('°', ' grados') + ' técnica gimnasio')
-}
-
-export function tiktokSearchUrl(name: string): string {
-  return `https://www.tiktok.com/search?q=${tiktokQuery(name)}`
-}
-
-/**
- * Opens the TikTok app on the search.
- * Android: intent:// with the browser URL as fallback inside it, so it never fails when the
- *          app isn't installed. Returns true when it handled the click.
- * iOS: the https link is already a Universal Link and opens the app by itself.
- * Desktop: stays in the browser.
- */
-export function openTiktokApp(name: string): boolean {
-  if (!/android/i.test(navigator.userAgent)) return false
-  const fallback = encodeURIComponent(tiktokSearchUrl(name))
-  window.location.href =
-    `intent://search?keyword=${tiktokQuery(name)}#Intent;scheme=snssdk1233;` +
-    `package=${TIKTOK_PACKAGE};S.browser_fallback_url=${fallback};end`
-  return true
 }

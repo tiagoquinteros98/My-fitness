@@ -2,17 +2,16 @@ import { useRef, useState } from 'react'
 import WeightChart from '../components/WeightChart'
 import { formatDate, todayISO } from '../lib/dates'
 import {
+  allExerciseNames,
   dayForDate,
   exerciseHistory,
-  openTiktokApp,
-  ROUTINE,
-  ROUTINE_DAYS,
+  routineOf,
   sessionId,
-  tiktokSearchUrl,
   weeklyVolume,
   type Exercise,
 } from '../lib/routine'
 import { actions, useStore } from '../lib/store'
+import { openTiktokApp, tiktokSearchUrl } from '../lib/tiktok'
 import type { AppState, WorkoutSession } from '../types'
 
 type View = 'train' | 'progress'
@@ -41,12 +40,16 @@ export default function GymPage() {
 function TrainView() {
   const state = useStore()
   const [date, setDate] = useState(todayISO())
-  const [day, setDay] = useState(() => dayForDate(todayISO()))
+  const routine = routineOf(state)
+  const [chosenDay, setDay] = useState(() => dayForDate(routine, todayISO()))
+  // The routine can change (e.g. edited through Claude): fall back if the chosen day is gone.
+  const routineDay = routine.find((d) => d.name === chosenDay) ?? routine[0]
+  const day = routineDay?.name ?? chosenDay
   // Set inputs are uncontrolled; bumping this remounts them empty after "Vaciar día".
   const [resets, setResets] = useState(0)
   const id = sessionId(date, day)
   const session = state.workouts.find((w) => w.id === id)
-  const exercises = ROUTINE[day]
+  const exercises = routineDay?.exercises ?? []
 
   let done = 0
   let total = 0
@@ -74,9 +77,9 @@ function TrainView() {
   return (
     <>
       <div className="days">
-        {ROUTINE_DAYS.map((d) => (
-          <button key={d} className="day" aria-pressed={d === day} onClick={() => setDay(d)}>
-            {d}
+        {routine.map(({ name }) => (
+          <button key={name} className="day" aria-pressed={name === day} onClick={() => setDay(name)}>
+            {name}
           </button>
         ))}
       </div>
@@ -89,7 +92,7 @@ function TrainView() {
           onChange={(e) => {
             const next = e.target.value || todayISO()
             setDate(next)
-            setDay(dayForDate(next))
+            setDay(dayForDate(routine, next))
           }}
         />
       </label>
@@ -109,7 +112,7 @@ function TrainView() {
 
       <section className="card">
         <h3>Volumen semanal por grupo</h3>
-        {weeklyVolume().map((v) => (
+        {weeklyVolume(routine).map((v) => (
           <div key={v.group} className="vol">
             <b>{v.sets}</b>
             <span className="vol-group">{v.group}</span>
@@ -270,11 +273,11 @@ function SetField({
 
 // --- Progress per exercise ---
 
-const ALL_EXERCISES = [...new Set(Object.values(ROUTINE).flat().map((e) => e.n))]
-
 function ProgressView() {
   const state = useStore()
-  const [exercise, setExercise] = useState(ALL_EXERCISES[0])
+  const names = allExerciseNames(state)
+  const [chosen, setExercise] = useState(names[0])
+  const exercise = names.includes(chosen) ? chosen : names[0]
   const [importMsg, setImportMsg] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const history = exerciseHistory(state, exercise)
@@ -294,7 +297,7 @@ function ProgressView() {
   return (
     <>
       <select className="ex-pick" value={exercise} onChange={(e) => setExercise(e.target.value)} aria-label="Ejercicio">
-        {ALL_EXERCISES.map((n) => (
+        {names.map((n) => (
           <option key={n}>{n}</option>
         ))}
       </select>

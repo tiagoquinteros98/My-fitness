@@ -59,6 +59,25 @@ export interface Settings {
   goalWeightKg?: number
 }
 
+export interface Exercise {
+  /** Name; also the key sets are stored under (renaming through the MCP migrates history). */
+  n: string
+  /** Muscle group. */
+  g: string
+  /** Sets. */
+  s: number
+  /** Reps per set, e.g. "10" or "45 seg". */
+  r: string
+  rir: string
+  /** Suggested starting weight, e.g. "22 kg c/u". */
+  w: string
+}
+
+export interface RoutineDay {
+  name: string // e.g. "Lunes"
+  exercises: Exercise[]
+}
+
 export interface WorkoutSet {
   kg: number
   reps: number
@@ -77,6 +96,8 @@ export interface AppState {
   weights: WeightEntry[]
   customFoods: Food[]
   workouts: WorkoutSession[]
+  /** The training routine; undefined until edited (the app then uses the default one). */
+  routine?: RoutineDay[]
   settings: Settings
 }
 
@@ -90,5 +111,6 @@ export type Op =
   | { type: 'putSettings'; settings: Settings }
   | { type: 'putWorkout'; session: WorkoutSession }
   | { type: 'deleteWorkout'; id: string }
+  | { type: 'putRoutine'; routine: RoutineDay[] }
   /** One-time upload of the data kept in the browser before the server existed. */
   | { type: 'import'; state: AppState }

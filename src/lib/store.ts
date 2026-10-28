@@ -81,6 +81,8 @@ function applyOp(s: AppState, op: Op): AppState {
       }
     case 'deleteWorkout':
       return { ...s, workouts: s.workouts.filter((w) => w.id !== op.id) }
+    case 'putRoutine':
+      return { ...s, routine: op.routine }
     case 'import':
       return s // Uploads what the browser already has.
   }

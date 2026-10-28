@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis'
-import type { AppState, DiaryEntry, Food, Op, Settings, WeightEntry, WorkoutSession } from '../src/types.js'
+import type { AppState, DiaryEntry, Food, Op, RoutineDay, Settings, WeightEntry, WorkoutSession } from '../src/types.js'
 
 // Single-user app: all data lives under a few Redis keys. DATA_PREFIX lets tests use separate keys.
 const PREFIX = process.env.DATA_PREFIX || 'mf'
@@ -10,6 +10,7 @@ const KEYS = {
   diary: `${PREFIX}:diary`, // hash id -> DiaryEntry
   weights: `${PREFIX}:weights`, // hash date -> WeightEntry
   workouts: `${PREFIX}:workouts`, // hash id -> WorkoutSession
+  routine: `${PREFIX}:routine`, // RoutineDay[]
 }
 
 export const DEFAULT_SETTINGS: Settings = { calorieGoal: 2000, macroGoals: {} }
@@ -28,13 +29,15 @@ export async function readState(): Promise<AppState & { initialized: boolean }> 
   p.hgetall<Record<string, DiaryEntry>>(KEYS.diary)
   p.hgetall<Record<string, WeightEntry>>(KEYS.weights)
   p.hgetall<Record<string, WorkoutSession>>(KEYS.workouts)
-  const [initialized, settings, foods, diary, weights, workouts] = (await p.exec()) as [
+  p.get<RoutineDay[]>(KEYS.routine)
+  const [initialized, settings, foods, diary, weights, workouts, routine] = (await p.exec()) as [
     unknown,
     Settings | null,
     Record<string, Food> | null,
     Record<string, DiaryEntry> | null,
     Record<string, WeightEntry> | null,
     Record<string, WorkoutSession> | null,
+    RoutineDay[] | null,
   ]
   return {
     initialized: !!initialized,
@@ -43,6 +46,7 @@ export async function readState(): Promise<AppState & { initialized: boolean }> 
     diary: Object.values(diary ?? {}).sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0)),
     weights: Object.values(weights ?? {}).sort((a, b) => a.date.localeCompare(b.date)),
     workouts: Object.values(workouts ?? {}).sort((a, b) => a.date.localeCompare(b.date)),
+    routine: routine ?? undefined,
   }
 }
 
@@ -75,6 +79,9 @@ export async function applyOps(ops: Op[]): Promise<void> {
       case 'deleteWorkout':
         p.hdel(KEYS.workouts, op.id)
         break
+      case 'putRoutine':
+        p.set(KEYS.routine, op.routine)
+        break
       case 'import': {
         const { state } = op
         const base = Date.now() - state.diary.length
@@ -85,6 +92,7 @@ export async function applyOps(ops: Op[]): Promise<void> {
         if (foods.length) p.hset(KEYS.foods, Object.fromEntries(foods.map((f) => [f.id, f])))
         if (state.weights.length) p.hset(KEYS.weights, Object.fromEntries(state.weights.map((w) => [w.date, w])))
         if (state.workouts?.length) p.hset(KEYS.workouts, Object.fromEntries(state.workouts.map((w) => [w.id, w])))
+        if (state.routine?.length) p.set(KEYS.routine, state.routine)
         p.set(KEYS.settings, { ...DEFAULT_SETTINGS, ...state.settings })
         break
       }

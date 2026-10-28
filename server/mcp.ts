@@ -4,6 +4,7 @@ import { lookupBarcode } from '../src/lib/openFoodFacts.js'
 import { normalize, nutrientsFor } from '../src/lib/nutrition.js'
 import { MACROS, MEALS, type AppState, type DiaryEntry, type Food, type Meal } from '../src/types.js'
 import { applyOps, readState } from './db.js'
+import { registerGymTools } from './gym.js'
 import { foodHistoryReport, progressReport, rangeOf, weightHistoryReport } from './history.js'
 
 const TIME_ZONE = 'America/Argentina/Buenos_Aires'
@@ -18,7 +19,9 @@ Cómo cargar comida:
 - Fechas en formato YYYY-MM-DD; si no se indica, es hoy (hora de Argentina).
 Después de registrar, contale al usuario qué se cargó y cómo va el día respecto a sus objetivos.
 
-Para evaluar el progreso: get_progress_report (ingesta vs. peso y gasto estimado), get_weight_history y get_food_history (agregá include_foods para ver qué comió cada día). Basá las recomendaciones en los datos, mencioná cuántos días hay registrados, y aclará que no reemplaza a un profesional de la salud.`
+Para evaluar el progreso: get_progress_report (ingesta vs. peso y gasto estimado), get_weight_history y get_food_history (agregá include_foods para ver qué comió cada día). Basá las recomendaciones en los datos, mencioná cuántos días hay registrados, y aclará que no reemplaza a un profesional de la salud.
+
+Gimnasio: get_routine muestra la rutina; add_routine_exercise, update_routine_exercise, remove_routine_exercise, manage_routine_day y replace_routine la modifican (contale al usuario cómo quedó; antes de reemplazar la rutina entera o borrar un día, confirmalo). log_workout_sets registra series (ej. "hice hack 4x8 con 90" → 4 series de 90 kg × 8). get_workout, get_exercise_history y get_training_report sirven para revisar el entrenamiento; para evaluar progreso combiná get_training_report con get_progress_report (peso y comida).`
 
 const MEAL_IDS = MEALS.map((m) => m.id) as [Meal, ...Meal[]]
 const mealLabel = (m: Meal) => MEALS.find((x) => x.id === m)!.label
@@ -347,6 +350,8 @@ export function createMcpServer(): McpServer {
       return text(progressReport(await readState(), range))
     },
   )
+
+  registerGymTools(server, today)
 
   return server
 }

@@ -4,7 +4,7 @@ Clon simple de MyFitnessPal con tres secciones:
 
 - **Diario de comidas**: agregá alimentos a Desayuno, Almuerzo, Cena o Snacks, buscándolos por nombre o **escaneando el código de barras** con la cámara. Muestra calorías y macros (carbohidratos, grasas, proteínas) y las calorías restantes contra un objetivo diario.
 - **Registro de peso**: un peso por día, gráfico de evolución, historial, cambio total y peso objetivo.
-- **Gym**: la rutina de tres días (Lunes, Miércoles, Viernes) para anotar peso y repeticiones de cada serie, con tu mejor serie anterior como referencia, video de técnica en TikTok (en Android abre la app; si no está instalada, el navegador), series y kilos movidos del día, volumen semanal por grupo y progreso por ejercicio. La rutina está en `src/lib/routine.ts`; las series se guardan por nombre de ejercicio, así que no conviene renombrar uno que ya tiene historial. Se puede importar la copia (`.json`) del registro de entrenamiento anterior.
+- **Gym**: la rutina de tres días (Lunes, Miércoles, Viernes) para anotar peso y repeticiones de cada serie, con tu mejor serie anterior como referencia, video de técnica en TikTok (en Android abre la app; si no está instalada, el navegador), series y kilos movidos del día, volumen semanal por grupo y progreso por ejercicio. La rutina se guarda en el servidor y se edita desde Claude (MCP); la inicial está en `src/lib/routine.ts`. Las series se guardan por nombre de ejercicio: al renombrar uno desde el MCP, su historial se mueve al nombre nuevo. Se puede importar la copia (`.json`) del registro de entrenamiento anterior.
 
 Los datos de los productos vienen de [Open Food Facts](https://world.openfoodfacts.org) (gratis, sin API key). Si un código no existe, podés crear el alimento a mano y queda guardado con ese código para la próxima vez.
 
@@ -40,7 +40,7 @@ Es una PWA (`manifest.webmanifest` + `sw.js`): en Chrome o Brave para Android, m
 
 `/api/mcp/<MCP_SECRET>` es un servidor MCP (Streamable HTTP) para agregarlo como conector en Claude. Permite mandarle a Claude la foto de una tabla nutricional (o de un plato) con los gramos, y que registre la comida en el diario y la guarde en la base de alimentos, con su código de barras para que el escáner la encuentre después.
 
-Herramientas: `search_my_foods`, `lookup_barcode`, `log_food`, `save_food`, `get_day_summary`, `delete_diary_entry`, `log_weight`, y para evaluar el progreso `get_weight_history`, `get_food_history` y `get_progress_report` (ingesta vs. tendencia de peso y gasto diario estimado por balance energético).
+Herramientas: `search_my_foods`, `lookup_barcode`, `log_food`, `save_food`, `get_day_summary`, `delete_diary_entry`, `log_weight`, y para evaluar el progreso `get_weight_history`, `get_food_history` y `get_progress_report` (ingesta vs. tendencia de peso y gasto diario estimado por balance energético). Gimnasio: `get_routine`, `add_routine_exercise`, `update_routine_exercise` (también renombra o mueve de día, migrando el historial), `remove_routine_exercise`, `manage_routine_day` (agregar, renombrar o quitar días), `replace_routine`, `log_workout_sets`, `get_workout`, `get_exercise_history` (con 1RM estimado) y `get_training_report` (adherencia, series por grupo, progreso, récords y estancamientos).
 
 La clave secreta en la URL es la credencial (los conectores no pueden iniciar sesión); está en la variable de entorno `MCP_SECRET` (mínimo 32 caracteres). Para rotarla, cambiá la variable, redeployá y actualizá la URL del conector.
 
