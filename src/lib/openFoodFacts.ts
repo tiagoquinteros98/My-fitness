@@ -1,4 +1,4 @@
-import type { Food } from '../types'
+import type { Food } from '../types.js'
 
 // Open Food Facts: free, open product database with barcode lookup. No API key needed.
 const BASE = 'https://world.openfoodfacts.org'

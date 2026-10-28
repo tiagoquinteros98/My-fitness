@@ -7,7 +7,7 @@ Clon simple de MyFitnessPal con dos funciones:
 
 Los datos de los productos vienen de [Open Food Facts](https://world.openfoodfacts.org) (gratis, sin API key). Si un código no existe, podés crear el alimento a mano y queda guardado con ese código para la próxima vez.
 
-Todo se guarda en el navegador (`localStorage`); no hay backend ni cuenta.
+Los datos viven en Upstash Redis (vía Vercel Marketplace) detrás de `/api/state`; el navegador guarda una copia en `localStorage` para abrir al instante y funcionar sin conexión, y sincroniza los cambios cuando puede. La primera vez que un navegador con datos abre la app, los sube al servidor.
 
 ## Uso
 
@@ -28,3 +28,15 @@ React + TypeScript + Vite. Escaneo con [`@zxing/browser`](https://github.com/zxi
 ## Deploy (Vercel)
 
 El sitio está protegido con usuario y contraseña (HTTP Basic Auth) mediante `middleware.ts`. Las credenciales se configuran como variables de entorno del proyecto en Vercel: `BASIC_AUTH_USER` y `BASIC_AUTH_PASSWORD`. Si faltan, el sitio no se sirve.
+
+## MCP para Claude
+
+`/api/mcp/<MCP_SECRET>` es un servidor MCP (Streamable HTTP) para agregarlo como conector en Claude. Permite mandarle a Claude la foto de una tabla nutricional (o de un plato) con los gramos, y que registre la comida en el diario y la guarde en la base de alimentos, con su código de barras para que el escáner la encuentre después.
+
+Herramientas: `search_my_foods`, `lookup_barcode`, `log_food`, `save_food`, `get_day_summary`, `delete_diary_entry`, `log_weight`.
+
+La clave secreta en la URL es la credencial (los conectores no envían Basic Auth); está en la variable de entorno `MCP_SECRET` (mínimo 32 caracteres). Para rotarla, cambiá la variable, redeployá y actualizá la URL del conector.
+
+Variables de entorno: `KV_REST_API_URL`, `KV_REST_API_TOKEN` (las crea la integración de Upstash), `MCP_SECRET`, `BASIC_AUTH_USER`, `BASIC_AUTH_PASSWORD`. `DATA_PREFIX` (opcional) cambia el prefijo de las claves en Redis, útil para probar sin tocar los datos reales.
+
+Para correr todo localmente (app + API + MCP): `vercel env pull .env.local && vercel dev`.

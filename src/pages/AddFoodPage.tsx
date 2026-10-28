@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { lookupBarcode, searchFoods } from '../lib/openFoodFacts'
-import { recentFoods, useStore } from '../lib/store'
+import { findByBarcode, recentFoods, useStore } from '../lib/store'
 import { MEALS, type Food, type Meal } from '../types'
 
 // The scanner pulls in the ZXing decoder, so load it only when the camera is opened.
@@ -53,7 +53,7 @@ export default function AddFoodPage({ meal, onBack, onSelectFood, onCreateFood }
     setError(null)
 
     // Foods the user created or already logged take priority (works offline too).
-    const known = recents.find((f) => f.barcode === code)
+    const known = findByBarcode(store, code)
     if (known) return onSelectFood(known)
 
     setLoading(true)

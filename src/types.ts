@@ -24,6 +24,8 @@ export interface Food {
   per100g: Nutrients
   /** Grams in one serving, when the product declares one. */
   servingGrams?: number
+  /** When the food was saved to the user's database (ms since epoch). */
+  savedAt?: number
 }
 
 export interface DiaryEntry {
@@ -32,6 +34,8 @@ export interface DiaryEntry {
   meal: Meal
   food: Food
   grams: number
+  /** ms since epoch; orders entries and "recent foods". */
+  createdAt?: number
 }
 
 export interface WeightEntry {
@@ -54,3 +58,21 @@ export interface Settings {
   macroGoals: Partial<Record<Macro, number>>
   goalWeightKg?: number
 }
+
+export interface AppState {
+  diary: DiaryEntry[]
+  weights: WeightEntry[]
+  customFoods: Food[]
+  settings: Settings
+}
+
+/** A single change, applied both locally and on the server (POST /api/state). */
+export type Op =
+  | { type: 'putDiary'; entry: DiaryEntry }
+  | { type: 'deleteDiary'; id: string }
+  | { type: 'putWeight'; entry: WeightEntry }
+  | { type: 'deleteWeight'; date: string }
+  | { type: 'putFood'; food: Food }
+  | { type: 'putSettings'; settings: Settings }
+  /** One-time upload of the data kept in the browser before the server existed. */
+  | { type: 'import'; state: AppState }

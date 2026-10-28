@@ -12,6 +12,9 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 export default function middleware(request: Request) {
+  // The MCP endpoint authenticates with its own secret (Claude connectors can't send Basic Auth).
+  if (new URL(request.url).pathname.startsWith('/api/mcp/')) return next()
+
   const user = process.env.BASIC_AUTH_USER
   const password = process.env.BASIC_AUTH_PASSWORD
   if (!user || !password) return new Response('Auth no configurada', { status: 500 })
