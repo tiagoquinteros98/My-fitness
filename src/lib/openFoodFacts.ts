@@ -2,12 +2,16 @@ import type { Food } from '../types'
 
 // Open Food Facts: free, open product database with barcode lookup. No API key needed.
 const BASE = 'https://world.openfoodfacts.org'
-const FIELDS = 'code,product_name,product_name_es,brands,nutriments,serving_quantity,image_small_url'
+const FIELDS =
+  'code,product_name,product_name_es,product_name_en,generic_name,abbreviated_product_name,brands,nutriments,serving_quantity,image_small_url'
 
 interface OffProduct {
   code?: string
   product_name?: string
   product_name_es?: string
+  product_name_en?: string
+  generic_name?: string
+  abbreviated_product_name?: string
   brands?: string
   serving_quantity?: number | string
   image_small_url?: string
@@ -41,16 +45,24 @@ function num(v: unknown): number {
 }
 
 function toFood(p: OffProduct): Food | null {
-  const name = p.product_name_es || p.product_name
+  const brand = p.brands?.split(',')[0]?.trim() || undefined
+  // Many Argentine products only have the name filled in another language, or not at all.
+  const name =
+    p.product_name_es || p.product_name || p.product_name_en || p.generic_name || p.abbreviated_product_name || brand
   if (!name) return null
   const n = p.nutriments ?? {}
   let kcal = num(n['energy-kcal_100g'])
   if (!kcal && n['energy_100g']) kcal = num(n['energy_100g']) / 4.184 // kJ -> kcal
+  const hasNutrition = ['energy-kcal_100g', 'energy_100g', 'proteins_100g', 'carbohydrates_100g', 'fat_100g'].some(
+    (k) => n[k] !== undefined && n[k] !== '',
+  )
+  // Without nutrition facts the product is useless here; treat it as missing so it can be created.
+  if (!hasNutrition) return null
   const serving = num(p.serving_quantity)
   return {
     id: `off:${p.code}`,
     name,
-    brand: p.brands?.split(',')[0]?.trim() || undefined,
+    brand,
     barcode: p.code,
     imageUrl: p.image_small_url,
     per100g: {
